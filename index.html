@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>산림 위기 대쉬보드 · SDG 15</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#fff;--tx:#222;--sub:#777;--card:#fff;--ln:#e3e3e3}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151515;--tx:#eee;--sub:#999;--card:#1d1d1d;--ln:#333}}
+:root[data-theme="dark"]{--bg:#151515;--tx:#eee;--sub:#999;--card:#1d1d1d;--ln:#333}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Malgun Gothic","맑은 고딕","Apple SD Gothic Neo","Noto Sans KR",sans-serif;display:flex;flex-direction:column;align-items:center;padding:20px 16px 28px}
+.tag{font-size:12px;color:var(--sub);font-weight:500}
+h1{font-size:24px;font-weight:bold;margin:6px 0 14px;text-align:center}
+p.s{margin:0 0 8px;font-size:13px;color:var(--sub);text-align:center}
+svg{width:100%;max-width:420px;height:auto;display:block}
+.t{fill:#fff;text-anchor:middle;font-weight:700;pointer-events:none}
+.panel{width:100%;max-width:420px;background:var(--card);border:1px solid var(--ln);border-radius:4px;padding:16px}
+.yr{font-size:28px;font-weight:500;text-align:center}
+input[type=range]{width:100%;accent-color:#10b981;margin:8px 0 2px}
+.ends{display:flex;justify-content:space-between;font-size:12px;color:var(--sub)}
+.cap{font-size:12px;color:var(--sub);margin:-2px 0 12px}
+.btns{display:flex;gap:8px;margin-top:10px}
+.btns button{flex:1;padding:9px;border:1px solid var(--ln);border-radius:4px;background:transparent;color:var(--tx);font:inherit;font-size:14px;cursor:pointer}
+.note{font-size:11px;color:var(--sub);margin-top:10px;text-align:center}
+label.up{display:inline-block;margin-top:6px;font-size:12px;color:#10b981;text-decoration:underline;cursor:pointer}
+</style></head><body>
+<div class="tag">SDG 15 · 육상 생태계</div>
+<h1>산림 위기 대쉬보드</h1>
+<svg viewBox="0 0 360 360" id="sv"></svg>
+<div class="cap" id="cap"></div>
+<div class="panel">
+ <div class="yr" id="yr"></div>
+ <input type="range" id="rg">
+ <div class="ends"><span id="mn"></span><span id="mx"></span></div>
+ <div class="btns"><button id="pl">재생</button><button id="rs">복원</button></div>
+</div>
+<script>
+const NS="http://www.w3.org/2000/svg";
+// 데이터: 연도별 값. CSV를 불러오면 이 값이 교체됩니다.
+const Y0=2000,Y1=2025;
+const P=Math.PI;
+const mk=a=>{const o={};a.forEach((v,i)=>o[Y0+i]=v);return o};
+const F=[6476000,6467100,6458200,6449300,6440400,6431500,6422600,6413700,6404800,6395900,6387000,6377000,6367000,6357000,6347000,6337000,6329200,6321400,6313600,6305800,6298000,6294226,6290452,6286678,6282904,6279130].map(v=>v/1000);
+const C=[55.2,56.1,56.8,57.5,58.2,58.9,59.8,60.7,62.0,61.2,59.8,56.4,53.1,50.2,47.0,45.6,45.1,44.8,44.5,43.2,40.5,41.2,39.8,38.5,40.2,36.4];
+const B=[85.4,85.2,85.0,84.9,84.7,84.5,84.4,84.2,84.1,83.9,83.8,83.7,83.6,83.5,83.4,83.3,83.2,83.2,83.1,83.1,83.0,83.0,82.9,82.8,82.7,82.6];
+const W=[522.1,521.6,521.3,520.8,520.3,519.8,519.4,518.9,518.3,517.9,517.8,516.7,516.1,515.5,515.1,515.1,514.7,514.3,513.9,513.2,512.1,511.8,511.4,511.1,510.8,510.5];
+const H=[41.2,41.6,42.0,42.4,42.8,43.2,43.6,44.0,44.4,44.8,45.2,45.6,46.0,46.4,46.8,47.2,47.5,47.8,48.1,48.4,48.7,49.0,49.3,49.6,49.9,50.2];
+const D={
+ forest:{name:"산림 면적",unit:"천ha",color:"#10b981",d:mk(F),dec:0,r:[48,92],N:18,h:10},
+ bio:{name:"생물 다양성",unit:"지수",color:"#8b5cf6",d:mk(B),dec:1,r:[40,56],N:11,h:8,a:-3*P/4},
+ frag:{name:"서식지 단편화",unit:"단편화 지수",color:"#f97316",d:mk(H),dec:1,r:[40,56],N:11,h:8,a:-P/4,inv:true},
+ water:{name:"물 순환",unit:"순환량",color:"#2563eb",d:mk(W),dec:1,r:[40,56],N:11,h:8,a:3*P/4},
+ carbon:{name:"탄소 흡수원",unit:"흡수량",color:"#0d9488",d:mk(C),dec:1,r:[40,56],N:11,h:8,a:P/4}
+};
+const CX=180,CY=180;
+const sv=document.getElementById("sv"),rg=document.getElementById("rg");
+const el=(n,a)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);sv.appendChild(e);return e};
+for(const k in D){D[k].gh=el("circle",{fill:"none",stroke:D[k].color,"stroke-width":1.6,"stroke-dasharray":"5 4",opacity:.6})}
+for(const k in D){const o=D[k],big=k==="forest";o.big=big;o.cur=1;o.key=k;
+ o.g=el("path",{fill:o.color,stroke:"var(--bg)","stroke-width":1.2,"stroke-linejoin":"round"});o.ring=el("circle",{fill:"none",stroke:"#fff","stroke-opacity":.45,"stroke-width":1.5})}
+for(const k in D){const o=D[k],big=k==="forest";
+ o.n=el("text",{class:"t","font-size":big?14:9});o.n.textContent=o.name;
+ o.v=el("text",{class:"t","font-size":big?17:10});
+ o.u=el("text",{class:"t","font-size":big?9.5:7,opacity:.85});o.u.textContent=o.unit}
+function gearPath(x,y,R,h,N,rot){const root=R-h,p=2*P/N;let d="";
+ for(let k=0;k<N;k++){const a0=rot+k*p;
+  [[-.27,root],[-.16,R],[.16,R],[.27,root]].forEach((q,i)=>{const a=a0+q[0]*p;
+   d+=(k===0&&i===0?"M":"L")+(x+q[1]*Math.cos(a)).toFixed(1)+" "+(y+q[1]*Math.sin(a)).toFixed(1)})}
+ return d+"Z"}
+let theta=0,thT=0;
+function render(){const f=D.forest,Rc=f.r[0]+(f.r[1]-f.r[0])*f.cur,pc=Rc-f.h/2;
+ f.g.setAttribute("d",gearPath(CX,CY,Rc,f.h,f.N,theta));
+ f.ring.setAttribute("cx",CX);f.ring.setAttribute("cy",CY);f.ring.setAttribute("r",Rc-f.h-4);
+ for(const k in D){const o=D[k];let x=CX,y=CY;
+  if(!o.big){const R=o.r[0]+(o.r[1]-o.r[0])*o.cur,ps=R-o.h/2,dist=pc+ps;
+   x=CX+dist*Math.cos(o.a);y=CY+dist*Math.sin(o.a);
+   const phi=o.a+P-P/o.N+(o.a-theta)*f.N/o.N;
+   o.g.setAttribute("d",gearPath(x,y,R,o.h,o.N,phi));o.ring.setAttribute("cx",x);o.ring.setAttribute("cy",y);o.ring.setAttribute("r",R-o.h-4)}
+  const big=o.big;o.gh.setAttribute("cx",x);o.gh.setAttribute("cy",y);
+  if(!big){const fd=.4+.6*Math.min(1,o.cur/.3);o.g.setAttribute("opacity",fd.toFixed(2));const c=o.cur<.3?"var(--tx)":"#fff";[o.n,o.v,o.u].forEach(e=>e.style.fill=c);o.ring.setAttribute("opacity",fd.toFixed(2));o.ring.setAttribute("stroke",o.cur<.3?"#888":"#fff")}
+  o.n.setAttribute("x",x);o.n.setAttribute("y",y-(big?6:3));
+  o.v.setAttribute("x",x);o.v.setAttribute("y",y+(big?14:10));
+  o.u.setAttribute("x",x);o.u.setAttribute("y",y+(big?29:20))}}
+let tg={},raf=0;
+function frame(){let mv=false;
+ for(const k in D){const o=D[k],d=tg[k]-o.cur;o.cur+=d*.14;if(Math.abs(d)>.0005)mv=true}
+ const dt=thT-theta;theta+=dt*.14;if(Math.abs(dt)>.002)mv=true;
+ render();raf=mv?requestAnimationFrame(frame):0}
+function range(){let mn=1e9,mx=-1e9;for(const k in D){const ys=Object.keys(D[k].d).map(Number);mn=Math.min(mn,...ys);mx=Math.max(mx,...ys)}return[mn,mx]}
+function ghosts(){const y0=+rg.min,RR={};
+ for(const k in D){const o=D[k],vs=Object.values(o.d),lo=Math.min(...vs),hi=Math.max(...vs),v=o.d[y0];
+  let t=v==null||hi===lo?1:(v-lo)/(hi-lo);if(o.inv)t=1-t;RR[k]=o.r[0]+(o.r[1]-o.r[0])*t}
+ const f=D.forest,pc=RR.forest-f.h/2;
+ for(const k in D){const o=D[k];let x=CX,y=CY;
+  if(k!=="forest"){const d=pc+RR[k]-o.h/2;x=CX+d*Math.cos(o.a);y=CY+d*Math.sin(o.a)}
+  o.gh.setAttribute("cx",x);o.gh.setAttribute("cy",y);o.gh.setAttribute("r",RR[k])}}
+function setup(){const[a,b]=range();rg.min=a;rg.max=b;rg.value=Math.min(Math.max(+rg.value||b,a),b);
+ mn.textContent=a;mx.textContent=b;cap.textContent="점선 원: "+a+"년 크기";ghosts();draw(true)}
+function draw(first){const y=+rg.value;yr.textContent=y+"년";
+ for(const k in D){const o=D[k],vs=Object.values(o.d),lo=Math.min(...vs),hi=Math.max(...vs);
+  const v=o.d[y];if(v==null)continue;
+  let t=hi===lo?1:(v-lo)/(hi-lo);if(o.inv)t=1-t;tg[k]=t;
+  o.v.textContent=v.toLocaleString("ko-KR",{maximumFractionDigits:o.dec,minimumFractionDigits:o.dec})}
+ thT=(y-Y0)*.28;
+ if(first===true){for(const k in D)D[k].cur=tg[k];theta=thT;render()}
+ else if(!raf)raf=requestAnimationFrame(frame)}
+let tm=0;
+const stop=()=>{clearInterval(tm);tm=0;pl.textContent="재생"};
+function run(dir,ms){stop();if(dir>0)pl.textContent="정지";
+ tm=setInterval(()=>{const v=+rg.value+dir;if(v>+rg.max||v<+rg.min){stop();return}rg.value=v;draw()},ms)}
+pl.onclick=()=>{if(tm){stop();return}if(+rg.value>=+rg.max){rg.value=rg.min;draw()}run(1,450)};
+rs.onclick=()=>run(-1,150);
+rg.oninput=()=>{stop();draw()};
+setup();
+</script></body></html>
